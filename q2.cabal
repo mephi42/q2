@@ -1,0 +1,20 @@
+name: q2
+version: 0.0.1
+cabal-version: >=1.2
+build-type: Simple
+license: BSD3
+license-file: ""
+stability: experimental
+description: Binary code IR generator generator
+category: Disassembler
+author: Ilya Leoshkevich <mephi42@gmail.com>
+data-dir: ""
+
+library
+    build-depends: QuickCheck -any, base -any, template-haskell -any
+    exposed-modules: Q2.TH.Replace
+    exposed: True
+    buildable: True
+    hs-source-dirs: src
+    ghc-options: -Wall
+
