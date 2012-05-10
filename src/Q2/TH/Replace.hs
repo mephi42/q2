@@ -1,13 +1,20 @@
-module Q2.TH.Replace(replace) where
+-- |Contains function `replace` that can be used to edit expressions.
+module Q2.TH.Replace(Action(Replace, Continue, Abort), replace) where
 
   import Control.Applicative
   import Control.Monad(ap, liftM)
   import Language.Haskell.TH
 
-  data Action a = Replace a
+  -- |Action to be carried out with sub-expression.
+  data Action a =
+                  -- |Continue using given sub-expression and do not visit its sub-expressions.
+                  Replace a
+                  -- |Continue using given sub-expression and visit its sub-expressions.
                 | Continue a
+                  -- |Do not continue.
                 | Abort
 
+  -- |Priorities when chaining: Abort > Replace > Continue.
   instance Monad Action where
     return = Continue
     (>>=) (Replace x) f = let result = f x in
@@ -18,34 +25,40 @@ module Q2.TH.Replace(replace) where
     (>>=) (Continue x) f = f x
     (>>=) Abort _ = Abort
 
+  -- |Derived from Monad instance.
   instance Functor Action where
     fmap = liftM
 
+  -- |Derived from Monad instance.
   instance Applicative Action where
     pure = return
     (<*>) = ap
 
+  -- |Applies single Action step to Maybe.
   apMaybe :: (a -> Action a) -> Maybe a -> Action (Maybe a)
   apMaybe _ Nothing = Continue Nothing
   apMaybe f (Just x) = do x' <- f x
                           Continue (Just x')
 
+  -- |Applies single Action step to List.
   apList :: (a -> Action a) -> [a] -> Action [a]
   apList _ [] = Continue []
   apList f (x:xs) = do x' <- f x
                        xs' <- apList f xs
                        Continue (x':xs')
 
+  -- |Converts Action to Maybe.
   toMaybe :: Action a -> Maybe a
   toMaybe (Replace x) = Just x
   toMaybe (Continue x) = Just x
   toMaybe Abort = Nothing
 
-  -- Executes given function over all sub-expressions,
-  -- possibly rewriting them in process.
+  -- |Recursively applies given function to all sub-expressions
+  --  of a given expression, possibly rewriting them.
   replace :: (Exp -> Action Exp) -> Exp -> Maybe Exp
   replace r e = toMaybe (_replace r e)
 
+  -- |replace() implementation.
   _replace :: (Exp -> Action Exp) -> Exp -> Action Exp
   _replace r e = let action = r e
                  in case action of
