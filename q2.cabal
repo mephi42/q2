@@ -1,20 +1,30 @@
 name: q2
 version: 0.0.1
-cabal-version: >=1.2
+cabal-version: >=1.8
 build-type: Simple
 license: BSD3
 license-file: ""
 stability: experimental
-description: Binary code IR generator generator
+description: Binary code IR generator generator driven by Haskell-based DSL
 category: Disassembler
 author: Ilya Leoshkevich <mephi42@gmail.com>
 data-dir: ""
-
+ 
 library
     build-depends: QuickCheck -any, base -any, template-haskell -any
-    exposed-modules: Q2.TH.Replace
+    exposed-modules: Q2.TH.Replace Q2.TH.ReplaceUtils
     exposed: True
     buildable: True
+    extensions: TemplateHaskell
     hs-source-dirs: src
-    ghc-options: -Wall
-
+    ghc-options: -Wall -fno-warn-type-defaults
+ 
+test-suite Q2.TH.Replace
+    build-depends: QuickCheck -any, base -any, q2 -any,
+                   template-haskell -any
+    type: exitcode-stdio-1.0
+    main-is: Q2/TH/Replace/Replace.hs
+    buildable: True
+    extensions: TemplateHaskell
+    hs-source-dirs: testsuite/tests
+    ghc-options: -Wall -fno-warn-type-defaults
