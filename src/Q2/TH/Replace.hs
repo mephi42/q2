@@ -85,7 +85,7 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
                           Continue (CondE x y z)    -> CondE <$> (rr x) <*> (rr y) <*> (rr z)
                           Continue (LetE d x)       -> LetE d <$> (rr x)
                           Continue (CaseE x ms)     -> CaseE <$> (rr x) <*> (return ms)
-                          Continue (DoE _)          -> action
+                          Continue (DoE s)          -> DoE <$> (rr s)
                           Continue (CompE _)        -> action
                           Continue (ArithSeqE _)    -> action
                           Continue (ListE xs)       -> ListE <$> (rr xs)
@@ -103,7 +103,7 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
                         ValD p b ds -> ValD p <$> (rr b) <*> (rr ds)
                         SigD n t    -> Continue (SigD n t)
                         -- XXX: do not consider other stuff for now, the above is enough for q2's purposes.
-                        _           -> Abort
+                        other       -> Continue other
                       where rr :: (ExpReplaceable a) => a -> Action a
                             rr = _expReplace r
 
@@ -123,3 +123,13 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
                             rt :: (Guard, Exp) -> Action (Guard, Exp)
                             rt (g, e) = do e' <- rr e
                                            return (g, e')
+
+  -- |Allows rewriting sub-expressions of a statement.
+  instance ExpReplaceable Stmt where
+    _expReplace r s = case s of
+                        BindS p e -> BindS p <$> (rr e)
+                        LetS ds   -> LetS <$> (rr ds)
+                        NoBindS e -> NoBindS <$> (rr e)
+                        ParS sss  -> ParS <$> (rr sss)
+                      where rr :: (ExpReplaceable a) => a -> Action a
+                            rr = _expReplace r
