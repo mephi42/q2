@@ -11,7 +11,7 @@ author: Ilya Leoshkevich <mephi42@gmail.com>
 data-dir: ""
  
 library
-    build-depends: QuickCheck -any, base -any,
+    build-depends: QuickCheck -any, base -any, ghc -any,
                    template-haskell -any
     exposed-modules: Q2.Core Q2.TH.Replace Q2.TH.ReplaceUtils
                      Q2.X86.InstructionEncoding

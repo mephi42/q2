@@ -4,6 +4,7 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
   import Control.Applicative
   import Control.Monad(ap, liftM)
   import Language.Haskell.TH
+  import MonadUtils
 
   -- |Action to be carried out with sub-expression.
   data Action a =
@@ -34,19 +35,6 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
     pure = return
     (<*>) = ap
 
-  -- |Applies single Action step to Maybe.
-  apMaybe :: (a -> Action a) -> Maybe a -> Action (Maybe a)
-  apMaybe _ Nothing  = Continue Nothing
-  apMaybe f (Just x) = do x' <- f x
-                          Continue (Just x')
-
-  -- |Applies single Action step to List.
-  apList :: (a -> Action a) -> [a] -> Action [a]
-  apList _ []     = Continue []
-  apList f (x:xs) = do x' <- f x
-                       xs' <- apList f xs
-                       Continue (x':xs')
-
   -- |Type whose sub-expressions can be rewritten.
   class ExpReplaceable a where
     -- |Recursively applies given function to all sub-expressions, possibly rewriting them.
@@ -61,11 +49,11 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
 
   -- |Allows rewriting sub-expressions of a Maybe.
   instance (ExpReplaceable a) => ExpReplaceable (Maybe a) where
-    _expReplace r m = (_expReplace r) `apMaybe` m
+    _expReplace r m = fmapMaybeM (_expReplace r) m
 
   -- |Allows rewriting sub-expressions of a list.
   instance (ExpReplaceable a) => ExpReplaceable [a] where
-    _expReplace r xs = (_expReplace r) `apList` xs
+    _expReplace r xs = mapM (_expReplace r) xs
 
   -- |Allows rewriting sub-expressions of an expression.
   instance ExpReplaceable Exp where
@@ -101,7 +89,6 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
     _expReplace r d = case d of
                         FunD n cs   -> FunD n <$> (rr cs)
                         ValD p b ds -> ValD p <$> (rr b) <*> (rr ds)
-                        SigD n t    -> Continue (SigD n t)
                         -- XXX: do not consider other stuff for now, the above is enough for q2's purposes.
                         other       -> Continue other
                       where rr :: (ExpReplaceable a) => a -> Action a
@@ -116,7 +103,7 @@ module Q2.TH.Replace(Action(Replace, Continue, Abort), ExpReplaceable(expReplace
   -- |Allows rewriting sub-expressions of a body.
   instance ExpReplaceable Body where
     _expReplace r b = case b of
-                        GuardedB xs -> GuardedB <$> (rt `apList` xs)
+                        GuardedB xs -> GuardedB <$> (mapM rt xs)
                         NormalB e   -> NormalB <$> (rr e)
                       where rr :: (ExpReplaceable a) => a -> Action a
                             rr = _expReplace r

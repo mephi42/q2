@@ -41,13 +41,13 @@ module Q2.Core where
 
   -- |Decoder.
   data Decoder a where
-    -- Decode next bits using given format and push result.
+    -- |Decodes next bits using given format and pushes result.
     Decode :: (Format f a) => f -> Decoder a
-    -- Evaluate expression and push result.
+    -- |Evaluates expression and pushes result.
     Eval :: a -> Decoder a
-    -- Run two decoders one after another.
+    -- |Runs two decoders one after another.
     Seq :: Decoder a0 -> (a0 -> Decoder a) -> Decoder a
-    -- Evaluate expression and branch based on result.
+    -- |Evaluates expression and branches based on result.
     Switch :: a0 -> [(a0, Decoder a)] -> Decoder a
 
   -- |Constructs format decoder.
