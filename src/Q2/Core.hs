@@ -124,6 +124,10 @@ module Q2.Core where
   decode :: (FormatLike f a) => f -> Decoder a
   decode x = Decode x
 
+  -- |Constructs switch.
+  switch :: a0 -> [(a0, Decoder a)] -> Decoder a
+  switch e ds = Switch e ds
+
   -- |Decoder chaining.
   instance Monad Decoder where
     return x = Eval x
