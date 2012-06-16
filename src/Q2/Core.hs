@@ -96,16 +96,16 @@ module Q2.Core where
 
 
   -- |Constructs address.
-  addr :: (AsLike a) => a -> Expr IntVal -> Expr AddrVal
-  addr a x = Addr (toAs a) x
+  (!) :: (AsLike a) => a -> Expr IntVal -> Expr AddrVal
+  (!) a x = Addr (toAs a) x
 
   -- |Constructs cell.
-  cell :: (FormatLike f (Expr v)) => f -> Expr AddrVal -> Expr v
-  cell f a = Cell (toFormat f) a
+  ptr :: (FormatLike f (Expr v)) => f -> Expr AddrVal -> Expr v
+  ptr f a = Cell (toFormat f) a
 
   -- |Constructs power expression.
-  pow :: Expr IntVal -> Expr IntVal -> Expr IntVal
-  pow x y = BinOp Pow x y
+  (**) :: Expr IntVal -> Expr IntVal -> Expr IntVal
+  (**) x y = BinOp Pow x y
 
 
 
