@@ -4,11 +4,58 @@ module Q2.Core where
   import Q2.TH.Replace
   import Language.Haskell.TH
 
+
+
+  -- |Concrete address space.
+  class (Show a) => As a
+
+  -- |Concrete data format.
+  class (Show f) => Format f a
+
+
+
   -- |Integer value.
   data IntVal = IntVal Integer
 
   -- |Boolean value.
   data BoolVal = BoolVal Bool
+
+  -- |Address space value.
+  data AsVal where
+    AsVal :: (As a) => a -> AsVal
+
+  -- |Address value.
+  data AddrVal = AddrVal AsVal Integer
+
+  -- |Data format value.
+  data FormatVal a where
+    FormatVal :: (Format f a) => f -> FormatVal a
+
+
+
+  -- |Something convertible to address space expression.
+  class AsLike a where
+    toAs :: a -> Expr AsVal
+
+  instance (As a) => AsLike a where
+    toAs x = AsLiteral $ AsVal x
+
+  instance AsLike AsVal where
+    toAs x = AsLiteral x
+
+
+
+  -- |Something convertible to data format expression.
+  class FormatLike f a where
+    toFormat :: f -> Expr (FormatVal a)
+
+  instance (Format f a) => FormatLike f a where
+    toFormat x = FormatLiteral $ FormatVal x
+
+  instance FormatLike (FormatVal a) a where
+    toFormat x = FormatLiteral x
+
+
 
   -- |Binary operation type.
   data BinOp l r v where
@@ -17,6 +64,8 @@ module Q2.Core where
 
     -- |Power.
     Pow :: BinOp IntVal IntVal IntVal
+
+
 
   -- |Expression.
   data Expr v where
@@ -29,20 +78,41 @@ module Q2.Core where
     -- |Boolean literal.
     BoolLiteral :: BoolVal -> Expr BoolVal
 
+    -- |Address space literal.
+    AsLiteral :: AsVal -> Expr AsVal
+
+    -- |Address.
+    Addr :: Expr AsVal -> Expr IntVal -> Expr AddrVal
+
+    -- |Data format.
+    FormatLiteral :: FormatVal v -> Expr (FormatVal v)
+
+    -- |Memory cell.
+    Cell :: Expr (FormatVal (Expr v)) -> Expr AddrVal -> Expr v
+
     -- |Binary operation
     BinOp :: BinOp l r v -> Expr l -> Expr r -> Expr v
+
+
+
+  -- |Constructs address.
+  addr :: (AsLike a) => a -> Expr IntVal -> Expr AddrVal
+  addr a x = Addr (toAs a) x
+
+  -- |Constructs cell.
+  cell :: (FormatLike f (Expr v)) => f -> Expr AddrVal -> Expr v
+  cell f a = Cell (toFormat f) a
 
   -- |Constructs power expression.
   pow :: Expr IntVal -> Expr IntVal -> Expr IntVal
   pow x y = BinOp Pow x y
 
-  -- |Data format.
-  class Format f a
+
 
   -- |Decoder.
   data Decoder a where
     -- |Decodes next bits using given format and pushes result.
-    Decode :: (Format f a) => f -> Decoder a
+    Decode :: (FormatLike f a) => f -> Decoder a
     -- |Evaluates expression and pushes result.
     Eval :: a -> Decoder a
     -- |Runs two decoders one after another.
@@ -51,7 +121,7 @@ module Q2.Core where
     Switch :: a0 -> [(a0, Decoder a)] -> Decoder a
 
   -- |Constructs format decoder.
-  decode :: (Format f a) => f -> Decoder a
+  decode :: (FormatLike f a) => f -> Decoder a
   decode x = Decode x
 
   -- |Decoder chaining.

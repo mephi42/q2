@@ -17,7 +17,7 @@ library
                      Q2.X86.InstructionEncoding
     exposed: True
     buildable: True
-    extensions: MultiParamTypeClasses TemplateHaskell GADTs FlexibleInstances
+    extensions: MultiParamTypeClasses TemplateHaskell GADTs FlexibleInstances UndecidableInstances FlexibleContexts
     hs-source-dirs: src
     ghc-options: -Wall -fno-warn-type-defaults
  
